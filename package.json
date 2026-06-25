@@ -1,23 +1,23 @@
 {
-  "name": "be",
+  "name": "11-iki-be",
   "version": "1.0.0",
-  "main": "app.js",
+  "description": "Backend Sistem Informasi Sekolah",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node migrate.js",
+    "seed": "node seed.js"
   },
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "bcrypt": "^6.0.0",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "knex": "^3.1.0",
-    "mysql2": "^3.17.2"
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.5"
   },
   "devDependencies": {
-    "knex-cli": "^1.0.1",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.0.2"
   }
 }

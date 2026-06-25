@@ -1,12 +1,9 @@
-const express = require('express')
-const router = express.Router()
+const router = require('express').Router();
+const authCtrl = require('../controllers/auth.controller');
+const { protect } = require('../middlewares/auth.middleware');
 
-const authMiddleware = require('../middlewares/auth.middleware')
-const authController = require('../controllers/auth.controller')
+router.post('/login', authCtrl.login);
+router.get('/me', protect, authCtrl.getMe);
+router.patch('/change-password', protect, authCtrl.changePassword);
 
-router.post('/login', authController.login)
-
-// route TERPROTEKSI
-router.post('/logout', authMiddleware, authController.logout)
-
-module.exports = router
+module.exports = router;

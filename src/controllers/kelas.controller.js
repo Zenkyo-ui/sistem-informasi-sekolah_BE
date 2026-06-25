@@ -1,27 +1,55 @@
-const asyncHandler = require('../utils/asyncHandler')
-const kelasService = require('../services/kelas.service')
+const KelasModel = require('../models/kelas.model');
+const AppError = require('../errors/AppError');
+const { sendSuccess } = require('../utils/response');
 
-exports.getAll = asyncHandler(async (req, res) => {
-  const data = await kelasService.getAll()
-  res.json(data)
-})
+exports.getAll = async (req, res, next) => {
+  try {
+    const [rows] = await KelasModel.findAll();
+    sendSuccess(res, 200, 'Data kelas berhasil diambil', rows);
+  } catch (err) { next(err); }
+};
 
-exports.getById = asyncHandler(async (req, res) => {
-  const data = await kelasService.getById(req.params.kode_kelas)
-  res.json(data)
-})
+exports.getOne = async (req, res, next) => {
+  try {
+    const [rows] = await KelasModel.findById(req.params.id);
+    if (!rows.length) return next(new AppError('Kelas tidak ditemukan', 404));
+    sendSuccess(res, 200, 'Data kelas berhasil diambil', rows[0]);
+  } catch (err) { next(err); }
+};
 
-exports.create = asyncHandler(async (req, res) => {
-  await kelasService.create(req.body)
-  res.status(201).json({ message: 'Kelas created' })
-})
+exports.getSiswaByKelas = async (req, res, next) => {
+  try {
+    const [kelas] = await KelasModel.findById(req.params.id);
+    if (!kelas.length) return next(new AppError('Kelas tidak ditemukan', 404));
+    const [siswa] = await KelasModel.findSiswaByKelas(req.params.id);
+    sendSuccess(res, 200, 'Data siswa berhasil diambil', { kelas: kelas[0], siswa });
+  } catch (err) { next(err); }
+};
 
-exports.update = asyncHandler(async (req, res) => {
-  await kelasService.update(req.params.kode_kelas, req.body)
-  res.json({ message: 'Kelas updated' })
-})
+exports.create = async (req, res, next) => {
+  try {
+    const { nama_kelas, tingkat, jurusan, wali_kelas_id, tahun_ajaran, kapasitas } = req.body;
+    if (!nama_kelas || !tingkat || !tahun_ajaran) return next(new AppError('nama_kelas, tingkat, tahun_ajaran wajib diisi', 400));
 
-exports.delete = asyncHandler(async (req, res) => {
-  await kelasService.delete(req.params.kode_kelas)
-  res.json({ message: 'Kelas deleted' })
-})
+    const [result] = await KelasModel.create({ nama_kelas, tingkat, jurusan, wali_kelas_id, tahun_ajaran, kapasitas: kapasitas || 30 });
+    sendSuccess(res, 201, 'Kelas berhasil dibuat', { id: result.insertId });
+  } catch (err) { next(err); }
+};
+
+exports.update = async (req, res, next) => {
+  try {
+    const [rows] = await KelasModel.findById(req.params.id);
+    if (!rows.length) return next(new AppError('Kelas tidak ditemukan', 404));
+    await KelasModel.update(req.params.id, req.body);
+    sendSuccess(res, 200, 'Kelas berhasil diperbarui');
+  } catch (err) { next(err); }
+};
+
+exports.remove = async (req, res, next) => {
+  try {
+    const [rows] = await KelasModel.findById(req.params.id);
+    if (!rows.length) return next(new AppError('Kelas tidak ditemukan', 404));
+    await KelasModel.delete(req.params.id);
+    sendSuccess(res, 200, 'Kelas berhasil dihapus');
+  } catch (err) { next(err); }
+};

@@ -1,41 +1,42 @@
-const db = require('../config/db')
+const db = require('../config/db');
 
-exports.findAll = async () => {
-  const [rows] = await db.query(
-    'SELECT kode_kelas, nama_kelas, created_at, updated_at FROM kelas WHERE deleted_at IS NULL'
-  )
-  return rows
-}
+const KelasModel = {
+  findAll: () =>
+    db.query(`
+      SELECT k.*, u.nama as nama_wali_kelas,
+        (SELECT COUNT(*) FROM siswa s WHERE s.kelas_id = k.id AND s.status = 'aktif') as jumlah_siswa
+      FROM kelas k
+      LEFT JOIN users u ON k.wali_kelas_id = u.id
+      ORDER BY k.tingkat, k.nama_kelas
+    `),
 
-exports.findById = async (kode_kelas) => {
-  const [rows] = await db.query(
-    'SELECT kode_kelas, nama_kelas FROM kelas WHERE kode_kelas = ? AND deleted_at IS NULL',
-    [kode_kelas]
-  )
-  return rows[0]
-}
+  findById: (id) =>
+    db.query(`
+      SELECT k.*, u.nama as nama_wali_kelas
+      FROM kelas k LEFT JOIN users u ON k.wali_kelas_id = u.id
+      WHERE k.id = ?
+    `, [id]),
 
-exports.create = async (data) => {
-  const { kode_kelas, nama_kelas } = data
+  findSiswaByKelas: (id) =>
+    db.query(`
+      SELECT s.id, s.nis, s.nisn, s.nama_lengkap, s.jenis_kelamin, s.status
+      FROM siswa s WHERE s.kelas_id = ? ORDER BY s.nama_lengkap
+    `, [id]),
 
-  await db.query(
-    'INSERT INTO kelas (kode_kelas, nama_kelas) VALUES (?, ?)',
-    [kode_kelas, nama_kelas]
-  )
-}
+  create: ({ nama_kelas, tingkat, jurusan, wali_kelas_id, tahun_ajaran, kapasitas }) =>
+    db.query(
+      'INSERT INTO kelas (nama_kelas, tingkat, jurusan, wali_kelas_id, tahun_ajaran, kapasitas) VALUES (?, ?, ?, ?, ?, ?)',
+      [nama_kelas, tingkat, jurusan, wali_kelas_id, tahun_ajaran, kapasitas]
+    ),
 
-exports.update = async (kode_kelas, data) => {
-  const { nama_kelas } = data
+  update: (id, fields) => {
+    const keys = Object.keys(fields);
+    const sql = `UPDATE kelas SET ${keys.map(k => `${k} = ?`).join(', ')} WHERE id = ?`;
+    return db.query(sql, [...Object.values(fields), id]);
+  },
 
-  await db.query(
-    'UPDATE kelas SET nama_kelas = ? WHERE kode_kelas = ?',
-    [nama_kelas, kode_kelas]
-  )
-}
+  delete: (id) =>
+    db.query('DELETE FROM kelas WHERE id = ?', [id]),
+};
 
-exports.softDelete = async (kode_kelas) => {
-  await db.query(
-    'UPDATE kelas SET deleted_at = NOW() WHERE kode_kelas = ?',
-    [kode_kelas]
-  )
-}
+module.exports = KelasModel;
